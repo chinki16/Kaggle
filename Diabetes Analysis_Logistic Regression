@@ -1,0 +1,55 @@
+#Reading the dataset
+library(readr)
+diabetes <- read_csv('../input/pima-indians-diabetes.csv')
+
+#Providing headers to the dataset
+colnames(diabetes)=c("preg", "plas", "pres", "skin", "test", "mass", "pedi", "age", "class")
+
+```
+```{r}
+#summary statistics
+summary(diabetes)
+#Structure of dataset
+str(diabetes)
+#Converting class variable as a factor
+diabetes$class=as.factor(diabetes$class)
+#Rows of the dataset
+head(diabetes)
+#Boxplot of variables 
+par(mfrow=c(2,4))
+boxplot(diabetes$preg,main="Boxplot of Preg",col="pink")
+boxplot(diabetes$plas,main="Boxplot of plas",col="pink")
+boxplot(diabetes$pres,main="Boxplot of pres",col="pink")
+boxplot(diabetes$skin,main="Boxplot of skin",col="pink")
+boxplot(diabetes$test,main="Boxplot of test",col="pink")
+boxplot(diabetes$mass,main="Boxplot of mass",col="pink")
+boxplot(diabetes$pedi,main="Boxplot of pedi",col="pink")
+boxplot(diabetes$age,main="Boxplot of age",col="pink")
+#Cheking for missing data
+library(Amelia)
+missmap(diabetes)
+#Choosing variable from AIC function
+full_model=glm(formula = class ~ plas + mass + preg + pedi + pres + age ,data  = diabetes,family = "binomial")
+null_model=glm(class~1. ,data = diabetes,family = "binomial")
+step(null_model, scope=list(lower=null_model, upper=full_model),
+direction="forward")
+#Running Logistic Regression model
+model=glm(formula = class ~ plas + mass + preg + pedi + pres + age, 
+    family = "binomial", data = diabetes)
+summary(model)
+# 90% training data and 10% test data
+indx = sample(1:nrow(diabetes), as.integer(0.9*nrow(diabetes)))
+train=diabetes[indx,]
+test=diabetes[-indx,]
+train_labels=diabetes[indx,9]
+test_labels=diabetes[-indx,9]
+#Running Logistic Regression model
+model=glm(formula = class ~ plas + mass + preg + pedi + pres + age, 
+    family = "binomial", data = train)
+summary(model)
+result=predict(model,newdata=test,type='response')
+result=ifelse(result> 0.5,'1','0')
+#Checking Accuracy
+
+misClasificError <- mean(result!= test$class)
+print(paste('Accuracy',1-misClasificError))
