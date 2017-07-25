@@ -1,0 +1,89 @@
+---
+title: "Newyork"
+author: "Chinki"
+date: "July 20, 2017"
+output: word_document
+---
+
+```{r}
+library(readr)
+getwd()
+setwd("C:/Computational Statistics/Kaggle/New York")
+train <- read.csv("C:/Computational Statistics/Kaggle/New York/train.csv")
+test_1 <- read_csv("C:/Computational Statistics/Kaggle/New York/test.csv")
+train=train[c(2,5,6,7,8,9,11)]
+
+test=test[c(2,4,5,6,7,8)]
+```
+
+```{r}
+#Structure of dataset
+train$vendor_id=as.factor(train$vendor_id)
+test$vendor_id=as.factor(test$vendor_id)
+str(train)
+str(test)
+```
+```{r}
+library(Amelia)
+missmap(train)
+missmap(test)
+```
+
+
+```{r}
+#Summary of datasets
+summary(train)
+summary(test)
+```
+```{r}
+#Histogram of variables 
+par(mfrow=c(2,3))
+hist(train$passenger_count,main="histogram of passenger counts",col="red")
+hist(train$pickup_longitude,main="histogram of pickup logitude",col="red")
+hist(train$pickup_latitude,main="histogram of pickup latitude",col="red")
+hist(train$dropoff_longitude,main="histogram of dropoff longitude",col="red")
+hist(train$dropoff_latitude,main="histogram of dropoff latitude",col="red")
+hist(train$trip_duration,main="histogram of trip duration",col="red")
+```
+
+```{r}
+#STep function to choose variable
+Full=lm(trip_duration~factor(vendor_id)+pickup_longitude+pickup_latitude+dropoff_longitude+dropoff_latitude+passenger_count+factor(vendor_id)*pickup_longitude+factor(vendor_id)*pickup_latitude+factor(vendor_id)*dropoff_longitude+factor(vendor_id)*dropoff_latitude+factor(vendor_id)*passenger_count+pickup_longitude*pickup_latitude+pickup_longitude*dropoff_longitude+pickup_longitude*dropoff_latitude+pickup_longitude*passenger_count+pickup_latitude*dropoff_longitude+pickup_latitude*dropoff_latitude+pickup_longitude*passenger_count+pickup_latitude*dropoff_longitude+pickup_latitude*passenger_count+dropoff_latitude*passenger_count,data=train)
+
+null=lm(trip_duration~1,data=train)
+step(null, scope=list(lower=null, upper=Full),direction="forward")
+
+```
+
+```{r}
+#Multiple Regression model
+model=lm(formula = trip_duration ~ pickup_latitude + pickup_longitude + 
+    factor(vendor_id) + dropoff_latitude + dropoff_longitude + 
+    passenger_count + pickup_latitude:pickup_longitude + pickup_latitude:dropoff_latitude + 
+    pickup_longitude:dropoff_longitude + factor(vendor_id):dropoff_longitude + 
+    factor(vendor_id):dropoff_latitude + factor(vendor_id):passenger_count + 
+    pickup_longitude:dropoff_latitude + pickup_latitude:passenger_count, 
+    data = train)
+summary(model)
+```
+
+```{r}
+library(ggplot2)
+ggplot(train,aes(train$pickup_longitude,train$pickup_latitude))+geom_point(aes(colour=train$vendor_id),size=3,alpha=0.8)+geom_smooth(method="lm",se=FALSE,aes(group=train$vendor_id))
+ggplot(train,aes(train$dropoff_longitude,train$dropoff_latitude))+geom_point(aes(colour=train$vendor_id),size=3,alpha=0.8)+geom_smooth(method="lm",se=FALSE,aes(group=train$vendor_id))
+```
+
+
+```{r}
+p=predict(model,test)
+p
+
+p=data.frame(test_1$id,p)
+library(xlsx)
+write.xlsx(p,file="p.xlsx")
+```
+```{r}
+write.table(p, "p.txt", sep="\t")
+
+```
+
